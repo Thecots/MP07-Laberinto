@@ -27,39 +27,56 @@
     gap: 10px;
     grid-template-areas: 
     "canvas options" "tools none";
-    
   }
 
   .options{grid-area: options;}
   .canvas{grid-area: canvas;}
   .tools{grid-area: tools;}
 
-
-
   .canvas{
     background: rgb(255, 255, 255);
     z-index: 5;
   }
 
-  .options{
+  .options section{
     user-select: none;
-    background-color: white;
     border-radius: 4px;
     padding: 5px;
     display: flex;
-    gap: 10px;
-    flex-direction: column
-    ;
+    gap: 15px;
+    flex-direction: column;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
   }
 
-  .options div{
+  .options section div{
     height: 40px;
-    background-color: aqua;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 5px;
     cursor: pointer;
+    border-radius: 4px;
+    border: 2px solid black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.3s;
+  }
+  
+
+  .options div:active{
+    transform: scale(0.95);
+  }
+
+  .bordes{
+    background-color: white;
+  }
+  .limpiar{
+    background-color: tomato;
+  }
+  .guardar{
+    background-color: lightgreen ;
   }
   
   .hover{
@@ -73,8 +90,8 @@
   .tools{
     user-select: none;
     background-color: white;
-    border-radius: 4px;
-    padding: 5px;
+    padding: 10px;
+    border-radius: 5px;
     display: flex;
     gap: 10px;
   }
@@ -104,9 +121,9 @@
   }
 
   .activeBtn{
-    border: 2px solid red !important;
+    border: 2px solid #f54c4c !important;
+    color: #f54c4c !important;
   }
-
 </style>
 <body>
   <main>
@@ -117,9 +134,11 @@
       </canvas>
    </section>
    <div class="options">
-      <div onclick="drawBorder()">Bordes</div> 
-      <div onclick="cleanBoard()">Limpiar</div>
-      <div>Guardar</div>
+      <section>
+        <div class="bordes" onclick="drawBorder()">Bordes</div> 
+        <div class="limpiar" onclick="cleanBoard()">Limpiar</div>
+        <div class="guardar" onclick="saveMap()">Guardar</div>
+      </section>
    </div>
    <section class="tools">
      <div class="start" onclick="setColor('royalblue',1)">Inicio</div>
@@ -128,6 +147,7 @@
      <div class="end" onclick="setColor('lightgreen',4)">Meta</div>
    </section>
   </main>
+  <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     /* settings */
     const canvasSize = 600
@@ -252,7 +272,6 @@
     }
   }
   
-
   /* set color */
   function setColor(color,pos){
     mouse.color = color
@@ -263,11 +282,30 @@
     sect.children[pos-1].classList.add('activeBtn')
   }
 
-
+  /* save map in json */
   function saveMap(){
-    console.log(JSON.stringify(boardMap));
+    cm = {start: false, end: false}
+    boardMap.find(n => {
+      if(n.color == 'royalblue') cm.start = true
+      if(n.color == 'lightgreen') cm.end = true
+    })
+    if(cm.start && cm.end){
+      target = new Image()
+      target.src = canvas.toDataURL()
+      document.querySelector('body').appendChild(target);
+
+      /* console.log(JSON.stringify(boardMap)); */
+      
+    }else{
+      Swal.fire(
+      'Error',
+      'Tienes que poner un inicio y una meta',
+      'error'
+      )
+    }
   }
 
+  /* draw border */
   function drawBorder(){
     board = boardMap.map(n => {
       if( n.x == 0 || n.x == canvasSize-pixelSize ||
@@ -279,6 +317,7 @@
     })
   }
 
+  /* clean board */
   function cleanBoard(){
     board = boardMap.map(n => {
       if(n.color != 'white'){
@@ -288,16 +327,28 @@
     })
   }
 
+  /* get level 1 */
+  function getLevel(){
+    fetch('/level1.json')
+    .then(response => response.json())
+    .then(r => {
+      arr = []
+      for (let i = 0; i < r.length; i++) {
+        arr.push(new Pixel(r[i].x,r[i].y,r[i].color))  
+      }
+      boardMap = arr;
+      printBoard(boardMap)
+    })
+  }
+
   /* init */
   async function init(){
     boardMap = filBoard()
     printBoard(boardMap)
     hoverAnimation()
-    
   }
 
   init()
-
-  </script>
+</script>
 </body>
 </html>
